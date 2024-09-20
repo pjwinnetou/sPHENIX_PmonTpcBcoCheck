@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source email.config
+source ../email.config
 JOB_IDS_FILE=$1
 LOG_DIR=$2
 
@@ -69,15 +69,26 @@ while true; do
 
   if [[ $status -eq 0 ]]; then
     echo "All jobs are done!"
-    echo -e "[BcoDump] All jobs completed for run ${run_number}.\nMonitor log file saved in ${JOB_IDS_FILE}.\nWill do automatic condor submission for analysis.\nPlease wait for the next email.." | mail -s "[BcoDump] Condor Jobs done for run ${run_number}" $EMAIL 
-    nohup bash auto_analysis_condor.sh $run_number > monitorlog/auto_analysis_monitor_${run_number}.log 2>&1 &
+    histoutput=$(bash runHist.sh "$run_number" 2>&1)
+    echo "$histoutput" > "monitorlog/hist_${run_number}.log"
+
+    efficiency=$(echo "$histoutput" | grep "nTotalPass / nTot" | sed 's/.*= \([0-9.]\+%\).*/\1/')
+    pdf_file=$(echo "$histoutput" | grep "Info in <TCanvas::Print>" | sed 's/.*pdf file \(.*\) has been created/\1/')
+    pdf_full_path=$(pwd)/"$pdf_file"
+
+    email_text="[Analysis] All jobs and analyses for GL1 TPC matching completed for run ${run_number}.
+    Monitor log file saved in monitorlog/hist_${run_number}.log.
+    Efficiency: $efficiency
+    The histogram PDF has been created: $pdf_full_path"
+    echo -e "$email_text" | mail -s "[Analysis] Full Analysis done for run ${run_number}" -a "$pdf_full_path" $EMAIL
+    echo "Email sent with efficiency: $efficiency and attached PDF: $pdf_full_path"
     break
   elif [[ $status -eq 2 ]]; then
-    echo -e "[BcoDump] One or more jobs failed for run ${run_number}.\nCheck ${JOB_IDS_FILE} and logs in ${LOG_DIR} for details.." | mail -s "[BcoDump] Problems found for condor jobs in run ${run_number}" $EMAIL
+    echo -e "[Analysis] One or more jobs failed for run ${run_number}.\nCheck ${JOB_IDS_FILE} and logs in ${LOG_DIR} for details.." | mail -s "[Analysis] Problems found for condor jobs in run ${run_number}" $EMAIL
     break
   else
     if [[ $timeSinceLastComplete -ge 60 ]]; then
-      echo -e "[BcoDump] No new completed jobs for run ${run_number} over 1 hour.\nCheck condor details and logs in ${JOB_IDS_FILE} and ${LOG_DIR}." | mail -s "[BcoDump] No update jobs for run ${run_number}" $EMAIL
+      echo -e "[Analysis] No new completed jobs for run ${run_number} over 1 hour.\nCheck condor details and logs in ${JOB_IDS_FILE} and ${LOG_DIR}." | mail -s "[Analysis] No update jobs for run ${run_number}" $EMAIL
       lastCompletedTime=$(date +%s)
     fi
     echo "Still running! wait another 30 seconds..." 

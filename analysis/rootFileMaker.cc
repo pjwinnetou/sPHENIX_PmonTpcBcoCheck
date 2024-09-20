@@ -21,8 +21,8 @@ int main(int argc, const char * argv[]) {
   std::cout << "reading file... " << filename.c_str() << std::endl;
   std::ifstream TpcFile(filename.c_str());
   if (!TpcFile.is_open()) {
-    std::cerr << "Error: Could not file: " << TpcFile << std::endl;
-    return; 
+    std::cerr << "Error: Could not file: " << filename << std::endl;
+    return 1; 
   }
   
   TpcDataEntry entry;
@@ -66,7 +66,7 @@ int main(int argc, const char * argv[]) {
   std::ifstream refFile(refFilename.c_str());
   if (!refFile.is_open()) {
     std::cerr << "Error: Could not file: " << refFilename << std::endl;
-    return; 
+    return 1; 
   }
 
 

@@ -13,7 +13,7 @@ void HistAna(int run = 52345, float ninterval = 0.1, int ntotalentries=-1)
 {
   std::ifstream file("../utilsout.config");
   if (!file.is_open()) {
-    std::cerr << "Error: Could not file: " << file << std::endl;
+    std::cerr << "Error: Could not utilsout.conif" << std::endl;
     return; 
   }
   std::string outdir;
